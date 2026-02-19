@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pick and Talk</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: radial-gradient(circle, #1f4037, #0f2027);
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 42px;
+        }
+
+        /* Space for chit to rise */
+        #stage {
+            height: 180px;
+        }
+
+        /* Bowl — placed lower */
+        #bowl {
+            width: 520px;
+            height: 300px;
+            margin: 0 auto 40px auto;
+            border-radius: 0 0 260px 260px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 6px solid rgba(255, 255, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Paper chits inside bowl */
+        .chit {
+            width: 80px;
+            height: 34px;
+            background: #fff;
+            position: absolute;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            transition: all 1s ease;
+        }
+
+        /* Selected chit */
+        .selected {
+            z-index: 10;
+        }
+
+        /* Rise animation - Adjust height */
+        .rise {
+            top: -150px !important;
+        }
+
+        /* Unfold animation - Animate width instead of scale */
+        .unfold {
+            /* Width will be set by JS inline style */
+            height: 60px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), height 0.5s ease, left 0.5s ease;
+        }
+
+        /* Topic text on chit */
+        .topicText {
+            font-size: 18px;
+            color: black;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            padding: 0 10px;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .showText {
+            opacity: 1;
+        }
+
+        /* Buttons */
+        button {
+            padding: 14px 28px;
+            margin: 12px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #drawBtn {
+            background: #f39c12;
+        }
+
+        #resetBtn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #counter {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* SPARK 2026 Logo Styles */
+        .spark-container {
+            margin-top: 40px;
+            margin-bottom: 0px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        .spark-title {
+            font-size: 100px;
+            font-weight: 900;
+            text-transform: uppercase;
+            /* Gold Metallic Gradient */
+            background: linear-gradient(to bottom, #F7E49D 0%, #D8AF50 30%, #9E731A 50%, #D8AF50 70%, #F7E49D 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            /* 3D Drop Shadow for Depth - using multiple shadows to simulate 3D block */
+            filter: drop-shadow(0px 4px 0px #825e1c);
+            letter-spacing: 2px;
+            line-height: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+
+        .spark-subtitle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .spark-year {
+            font-size: 50px;
+            font-weight: 800;
+            /* Matching Gold Gradient */
+            background: linear-gradient(to bottom, #F7E49D 0%, #D8AF50 40%, #9E731A 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0px 2px 0px #825e1c);
+        }
+
+        /* Gold Horizontal Lines */
+        .spark-line {
+            height: 5px;
+            width: 80px;
+            background: linear-gradient(to right, transparent, #D8AF50, #F7E49D, #D8AF50, transparent);
+            border-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="spark-container">
+        <div class="spark-title">SPARK</div>
+        <div class="spark-subtitle">
+            <div class="spark-line"></div>
+            <div class="spark-year">2026</div>
+            <div class="spark-line"></div>
+        </div>
+    </div>
+
+    <h1>PICK AND TALK</h1>
+
+    <div id="stage"></div>
+
+    <div id="bowl"></div>
+
+    <button id="drawBtn">Mix & Reveal</button>
+    <button id="resetBtn">Reset</button>
+
+    <div id="counter"></div>
+
+    <script>
+
+        // 🔴 ADD YOUR TOPICS HERE
+        const allTopics = [
+            // 🟢 Category A: Everyday Tech (Beginner)
+            "The Impact of Smartphones on Social Skills",
+            "Why We Can’t Live Without Wi-Fi",
+            "The Future of Online Shopping",
+            "Are Physical Books Better Than E-books?",
+            "The Evolution of Video Games",
+            "How Google Maps Changed Travel",
+            "The Pros and Cons of Working from Home",
+            "Smart Homes: Are they actually smart?",
+            "The Rise of Streaming Services (Netflix vs. TV)",
+            "Is Face Recognition Safe?",
+            "The Role of Technology in Education",
+            "Why Everyone Needs to Learn Coding",
+            "Fitness Trackers: Motivation or Obsession?",
+            "The Death of the Landline Phone",
+            "How YouTube Taught the World",
+            "The Impact of Social Media Influencers on Youth",
+            "Online Food Delivery: Convenience or Dependency?",
+            "Digital Classrooms vs. Traditional Classrooms",
+            "Mobile Phones in Schools: Helpful or Harmful?",
+            "The Rise of Online Gaming Communities",
+            "Cashless Society: Is Physical Money Disappearing?",
+            "The Popularity of Short Video Apps (Reels/Shorts)",
+            "Are Smart TVs Making Cable Obsolete?",
+            "The Culture of Online Reviews and Ratings",
+            "Technology and Sleep: Are Screens Stealing Our Rest?",
+            "The Role of Apps in Daily Productivity",
+            "Do Emojis Improve or Ruin Communication?",
+            "The Boom of Online Learning Platforms",
+            "Digital Photography vs. Traditional Photography",
+            "Is GPS Making Us Lose Our Sense of Direction?",
+            // 🟡 Category B: Emerging Tech (Intermediate)
+            "The Rise of ChatGPT and Generative AI",
+            "Electric Vehicles: Are they the only future?",
+            "Virtual Reality (VR) in Healthcare",
+            "3D Printing: Printing Houses and Organs",
+            "The Concept of the 'Metaverse'",
+            "Drones: Delivery Tools or Privacy Threats?",
+            "How 5G Will Change the Internet",
+            "Renewable Energy Technology",
+            "Wearable Tech (Smart Glasses/Rings)",
+            "The Future of Space Tourism",
+            "Holograms in Communication",
+            "Automation in Factories: Good or Bad?",
+            "The Security of Digital Payments",
+            "Voice Assistants (Alexa/Siri): Listening 24/7?",
+            "Smart Cities of the Future",
+            "The Future of Autonomous Vehicles (Self-Driving Cars)",
+            "Blockchain Beyond Cryptocurrency",
+            "AI in Healthcare: Doctor’s Assistant or Replacement?",
+            "The Rise of FinTech and Digital Banking",
+            "Smart Agriculture: Technology in Farming",
+            "The Potential of Hydrogen Fuel Technology",
+            "Edge Computing vs. Cloud Computing",
+            "Biometric Security: Fingerprint vs. Face vs. Iris",
+            "The Future of Wearable Medical Devices",
+            "AI-Generated Content in Media and Art",
+            "Robotics in Disaster Management",
+            "The Growth of E-Sports as a Career",
+            "The Role of Satellites in Modern Communication",
+            "Digital Twins: Virtual Models of Real Systems",
+            "The Future of Human-Robot Collaboration",
+            // 🔴 Category C: Deep Tech & Ethics (Advanced)
+            "Artificial Intelligence vs. Human Intelligence",
+            "The Risks of Deepfakes",
+            "Can Robots Have Emotions?",
+            "The Ethics of Gene Editing (CRISPR)",
+            "Cyber Warfare: The New Frontline",
+            "Quantum Computing: The Next Frontier",
+            "Data Privacy: Does it exist anymore?",
+            "The Impact of Tech on Mental Health",
+            "Neuralink: Connecting Brains to Computers",
+            "Is Universal Basic Income needed if AI takes jobs?",
+            "The Carbon Footprint of the Internet",
+            "Cryptocurrency: Future of Finance or a Bubble?",
+            "The 'Right to Repair' Movement",
+            "Algorithmic Bias in Social Media",
+            "Space Debris: The Trash in Orbit",
+            "Nanotechnology in Medicine",
+            "The Digital Divide: Technology Inequality",
+            "Can Tech Solve Climate Change?",
+            "The Turing Test: Can Machines Think?",
+            "Life on Mars: Tech Challenges",
+            "The Ethics of Autonomous Weapons Systems",
+            "Should AI Be Given Legal Personhood?",
+            "The Risks of Mass Surveillance Technologies",
+            "Can Technology Replace Human Creativity?",
+            "The Moral Implications of Human Cloning",
+            "Brain-Computer Interfaces and Free Will",
+            "AI in Judicial Systems: Fair or Flawed?",
+            "The Future of Work in an Automated World",
+            "Technological Singularity: Myth or Reality?",
+            "The Environmental Cost of Data Centers",
+            "Digital Addiction: A Public Health Crisis?",
+            "Who Owns Your Data in the Digital Age?",
+            "The Ethics of Predictive Policing",
+            "Genetic Privacy in the Age of DNA Testing",
+            "The Role of Technology in Democracy and Elections",
+            "Can Machines Be Held Accountable for Decisions?",
+            "The Balance Between Innovation and Regulation",
+            "Transhumanism: Enhancing Humans with Technology",
+            "The Impact of AI on Global Inequality",
+            "The Future of Human Identity in a Digital World"
+        ];
+
+        let remaining = [...allTopics];
+
+        const bowl = document.getElementById("bowl");
+        const counter = document.getElementById("counter");
+
+        updateCounter();
+
+        let chits = [];
+
+        /* Create chits */
+        function createChits() {
+            bowl.innerHTML = "";
+            chits = [];
+
+            for (let i = 0; i < 30; i++) {
+                const c = document.createElement("div");
+                c.className = "chit";
+                randomizePosition(c);
+                bowl.appendChild(c);
+                chits.push(c);
+            }
+        }
+
+        createChits();
+
+        /* Random position */
+        function randomizePosition(c) {
+            c.style.left = Math.random() * 430 + "px";
+            c.style.top = Math.random() * 230 + "px";
+            c.style.transform =
+                `rotate(${Math.random() * 360}deg)`;
+        }
+
+        /* Mixing animation */
+        function mixChits(times, callback) {
+            let count = 0;
+
+            const mixer = setInterval(() => {
+                chits.forEach(c => randomizePosition(c));
+                count++;
+
+                if (count >= times) {
+                    clearInterval(mixer);
+                    callback();
+                }
+
+            }, 250);
+        }
+
+        /* DRAW BUTTON */
+        document.getElementById("drawBtn").onclick = () => {
+
+            if (remaining.length === 0) {
+                alert("All topics completed!");
+                return;
+            }
+
+            createChits();
+
+            mixChits(10, () => {
+
+                const chosen =
+                    chits[Math.floor(Math.random() * chits.length)];
+
+                chosen.classList.add("selected");
+
+                /* Move to center */
+                chosen.style.left = "220px";
+                chosen.style.top = "120px";
+                chosen.style.transform = "";
+
+                /* Hide others and allow selected to rise */
+                chits.forEach(c => {
+                    if (c !== chosen) c.style.opacity = "0";
+                });
+                bowl.style.overflow = "visible";
+
+                /* Rise into open space */
+                setTimeout(() => {
+                    chosen.classList.add("rise");
+                    // Ensure it starts small for the unfold animation later
+                    chosen.style.width = "80px";
+                    chosen.style.left = "50%";
+                    chosen.style.transform = "translateX(-50%)";
+                    chosen.style.transition = "all 0.5s ease"; // ensure these properties animate
+                }, 100);
+
+                /* Select topic EARLY to calculate width */
+                const index = Math.floor(Math.random() * remaining.length);
+                const topic = remaining[index];
+                remaining.splice(index, 1);
+
+                /* Unfold clearly with DYNAMIC WIDTH */
+                setTimeout(() => {
+                    // Create temporary span to measure text width
+                    const tempSpan = document.createElement("span");
+                    tempSpan.style.visibility = "hidden";
+                    tempSpan.style.position = "absolute";
+                    tempSpan.style.whiteSpace = "nowrap";
+                    tempSpan.style.font = "bold 18px 'Segoe UI'"; // Match .topicText
+                    tempSpan.innerText = topic;
+                    document.body.appendChild(tempSpan);
+                    const widthStart = tempSpan.offsetWidth + 60; // Add padding
+                    document.body.removeChild(tempSpan);
+
+                    // Force reflow to ensure transition plays
+                    void chosen.offsetWidth;
+
+                    chosen.style.width = widthStart + "px";
+                    chosen.classList.add("unfold");
+
+                }, 1800);
+
+                /* Show topic text ON chit */
+                setTimeout(() => {
+
+                    chosen.innerHTML =
+                        `<div class="topicText">${topic}</div>`;
+
+                    setTimeout(() => {
+                        chosen.querySelector(".topicText").classList.add("showText");
+                    }, 50);
+
+                    updateCounter();
+
+                }, 2500);
+            });
+        };
+
+        /* RESET */
+        document.getElementById("resetBtn").onclick = () => {
+            remaining = [...allTopics];
+            bowl.style.overflow = "hidden"; // Restore clipping
+            createChits();
+            updateCounter();
+        };
+
+        function updateCounter() {
+            counter.innerText =
+                "Remaining Topics: " + remaining.length;
+        }
+
+    </script>
+
+</body>
+
+</html>
